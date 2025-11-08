@@ -42,19 +42,6 @@ numpy
 
 ---
 
-## Architecture
-
-```
-PySide6 GUI (Controls + Plot)
-        │
-        ▼
-ROSInterface  ─── publishes commands to /control_cmd
-        │
-        └── emits simulated telemetry to GUI (battery, velocity, sensor)
-```
-
----
-
 ## Design Decisions
 
 This GUI was built using PySide6 for a light, embedded-friendly footprint.
@@ -69,7 +56,7 @@ CSV logging is implemented manually to ensure deterministic low-latency writing.
 ## Demo Video
 
 Watch the GUI in action:
-[https://youtu.be/vOkSku_qIhs](https://youtu.be/vOkSku_qIhs)
+[https://youtu.be/vOkSku_qIhs](https://www.youtube.com/watch?v=vOkSku_qIhs)
 
 ---
 
