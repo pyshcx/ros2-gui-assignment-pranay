@@ -1,0 +1,110 @@
+from PySide6.QtCore import Qt, QTimer, Signal, Slot
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+    QFileDialog, QCheckBox, QFrame
+)
+import pyqtgraph as pg
+from ros_interface import ROSInterface
+from logger import CsvLogger
+
+class ControlPanelApp(QWidget):
+    startClicked = Signal()
+    stopClicked = Signal()
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("ROS2 Control & Viz Panel")
+        self.setMinimumSize(900, 600)
+
+        self.ros = ROSInterface()
+        self.logger = CsvLogger()
+
+        self._build_ui()
+        self._wire_signals()
+
+        self.max_points = 1000
+        self.xdata = []
+        self.ydata = []
+
+        self.plot_timer = QTimer(self)
+        self.plot_timer.timeout.connect(self._refresh_plot)
+        self.plot_timer.start(33)
+
+    def _build_ui(self):
+        root = QVBoxLayout(self)
+
+        controls = QHBoxLayout()
+        self.btn_start = QPushButton("Start")
+        self.btn_stop = QPushButton("Stop")
+        self.chk_log = QCheckBox("Start Logging")
+        controls.addWidget(self.btn_start)
+        controls.addWidget(self.btn_stop)
+        controls.addStretch(1)
+        controls.addWidget(self.chk_log)
+        root.addLayout(controls)
+
+        status_frame = QFrame()
+        status_frame.setFrameShape(QFrame.StyledPanel)
+        status = QHBoxLayout(status_frame)
+        self.lbl_batt = QLabel("Battery: -- %")
+        self.lbl_vel = QLabel("Velocity: -- m/s")
+        self.lbl_sensor = QLabel("Sensor: --")
+        status.addWidget(self.lbl_batt)
+        status.addWidget(self.lbl_vel)
+        status.addWidget(self.lbl_sensor)
+        status.addStretch(1)
+        root.addWidget(status_frame)
+
+        self.plot = pg.PlotWidget()
+        self.plot.showGrid(x=True, y=True)
+        self.plot.setLabel("left", "Sensor")
+        self.plot.setLabel("bottom", "Time", units="s")
+        self.curve = self.plot.plot([], [], pen=pg.mkPen(width=2))
+        root.addWidget(self.plot, 1)
+
+    def _wire_signals(self):
+        self.btn_start.clicked.connect(self.startClicked)
+        self.btn_stop.clicked.connect(self.stopClicked)
+        self.chk_log.toggled.connect(self._toggle_logging)
+
+        self.startClicked.connect(self.ros.publish_start)
+        self.stopClicked.connect(self.ros.publish_stop)
+
+        self.ros.sig_state_update.connect(self._on_state_update)
+        self.ros.sig_sensor_update.connect(self._on_sensor_update)
+
+    @Slot(float, float)
+    def _on_state_update(self, battery_pct: float, velocity_mps: float):
+        self.lbl_batt.setText(f"Battery: {battery_pct:5.1f} %")
+        self.lbl_vel.setText(f"Velocity: {velocity_mps:5.2f} m/s")
+        if self.logger.is_active:
+            self.logger.write_state(battery_pct, velocity_mps)
+
+    @Slot(float, float)
+    def _on_sensor_update(self, t_sec: float, value: float):
+        self.lbl_sensor.setText(f"Sensor: {value:6.3f}")
+        self.xdata.append(t_sec)
+        self.ydata.append(value)
+        if len(self.xdata) > self.max_points:
+            self.xdata = self.xdata[-self.max_points:]
+            self.ydata = self.ydata[-self.max_points:]
+        if self.logger.is_active:
+            self.logger.write_sensor(t_sec, value)
+
+    @Slot(bool)
+    def _toggle_logging(self, checked: bool):
+        if checked:
+            path = QFileDialog.getSaveFileName(self, "Save CSV", "logs/session.csv", "CSV Files (*.csv)")[0]
+            if not path:
+                self.chk_log.blockSignals(True)
+                self.chk_log.setChecked(False)
+                self.chk_log.blockSignals(False)
+                return
+            self.logger.start(path)
+        else:
+            self.logger.stop()
+
+    def _refresh_plot(self):
+        if self.xdata:
+            self.curve.setData(self.xdata, self.ydata)
+
