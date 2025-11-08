@@ -1,1 +1,1 @@
-# ros2-gui-assignment-pranay
+This GUI was built using PySide6 to maintain a lightweight footprint suitable for embedded deployment. The ROS 2 node runs inside a background MultiThreadedExecutor to avoid blocking the UI thread, and Qt signals are used to move data safely across threads. Telemetry is simulated internally to keep the system hardware-independent. Plotting is done using PyQtGraph because it is real-time optimized and low overhead. CSV logging is implemented directly to avoid framework overhead, ensuring deterministic write behavior.
