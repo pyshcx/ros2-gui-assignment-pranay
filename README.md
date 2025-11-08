@@ -14,3 +14,8 @@ source ~/ros2_humble/install/setup.bash
 cd ~/ros2_gui_test
 source venv/bin/activate
 python3 src/main.py
+
+## Demo Video
+
+Watch the demo here:  
+https://youtu.be/vOkSku_qIhs
