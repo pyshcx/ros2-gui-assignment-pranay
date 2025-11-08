@@ -1,1 +1,16 @@
-This GUI was built using PySide6 to maintain a lightweight footprint suitable for embedded deployment. The ROS 2 node runs inside a background MultiThreadedExecutor to avoid blocking the UI thread, and Qt signals are used to move data safely across threads. Telemetry is simulated internally to keep the system hardware-independent. Plotting is done using PyQtGraph because it is real-time optimized and low overhead. CSV logging is implemented directly to avoid framework overhead, ensuring deterministic write behavior.
+# ROS2 GUI Control + Telemetry Visualization
+
+## Objective
+Desktop GUI built from scratch using PySide6 that communicates with ROS2.
+Features:
+- Start / Stop buttons → publish to `/control_cmd`
+- Status display → battery %, velocity
+- Live plot of simulated sensor data
+- CSV logging
+
+## Setup
+```bash
+source ~/ros2_humble/install/setup.bash
+cd ~/ros2_gui_test
+source venv/bin/activate
+python3 src/main.py
